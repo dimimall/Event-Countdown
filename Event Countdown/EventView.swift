@@ -13,6 +13,7 @@ struct EventView: View {
     @State var eventSelect: Event?
     @State private var showDetails = false
     @State private var events: [Event] = []
+    @State private var isPresented = false
     
     var body: some View {
         NavigationStack {
@@ -29,11 +30,15 @@ struct EventView: View {
                 .font(.headline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        NavigationLink(destination: EventForm(event: .constant(Event(id: UUID(), title: "", date: Date(), color: Color.black)), mode: .add, onSave:addEvent)){
+                        Button(action: {
+                            isPresented = true
+                        }){
                             Image(systemName: "plus")
                                 .imageScale(.large)
                                 .tint(.black)
-                        }
+                        }.navigationDestination(isPresented: $isPresented, destination: {
+                            EventForm(event: .constant(Event(id: UUID(), title: "", date: Date(), color: Color.blue.toHex()!)), mode: .add, onSave: addEvent)
+                        })
                     }
                 }
             }
@@ -43,12 +48,16 @@ struct EventView: View {
                     .font(.headline)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
-                            NavigationLink(destination: EventForm(event: .constant(Event(id: UUID(), title: "", date: Date(), color: Color.black)), mode: .add, onSave:addEvent)){
+                            Button(action: {
+                                isPresented = true
+                            }){
                                 Image(systemName: "plus")
                                     .imageScale(.large)
                                     .tint(.black)
+                            }.navigationDestination(isPresented: $isPresented, destination: {
+                                EventForm(event: .constant(Event(id: UUID(), title: "", date: Date(), color: Color.blue.toHex()!)), mode: .add, onSave: addEvent)
+                            })
                         }
-                    }
                 }
             }
         }
@@ -61,7 +70,9 @@ struct EventView: View {
         print("remove index \(offsets)")
         events.remove(atOffsets: offsets)
         
-        UserDefaults.standard.set(eventArrayToData(eventArray: events), forKey: "eventsArray")
+        if let encoded = try? JSONEncoder().encode(events) {
+            UserDefaults.standard.set(encoded, forKey: "eventsArray")
+        }
     }
     
     private func addEvent(event: Event) {
@@ -70,30 +81,23 @@ struct EventView: View {
             events.insert(event, at: existingEventsIndex)
         }
         else {
+            
             events.append(event)
         }
         
-        UserDefaults.standard.set(eventArrayToData(eventArray: events), forKey: "eventsArray")
+        if let encoded = try? JSONEncoder().encode(events) {
+            UserDefaults.standard.set(encoded, forKey: "eventsArray")
+        }
     }
     
     private func loadEvents() -> [Event]{
-        if let savedEventsData =
-            UserDefaults.standard.data(forKey: "eventsArray") {
-            
-            if let loadedEvents = dataToEventArray(data: savedEventsData) {
-                return loadedEvents as! [Event]
-            }
+        if let data = UserDefaults.standard.data(forKey: "eventsArray"),
+           let events = try? JSONDecoder().decode([Event].self, from: data) {
+            return events
         }
         return []
     }
     
-    func eventArrayToData(eventArray: [Any]) -> Data? {
-      return try? JSONSerialization.data(withJSONObject: eventArray, options: [])
-    }
-    
-    func dataToEventArray(data: Data) -> [Any]? {
-        return (try? JSONSerialization.jsonObject(with: data, options: [])) as? [Event]
-    }
 }
 
 #Preview {

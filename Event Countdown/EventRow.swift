@@ -14,7 +14,7 @@ struct EventRow: View {
     var body: some View {
         HStack {
             Text(event.title)
-                .foregroundColor(event.color)
+                .foregroundColor(event.textColor)
                 .font(.headline)
             
             Spacer()
@@ -28,7 +28,7 @@ struct EventRow: View {
     }
     
     private func startTimer() {
-        Timer.scheduledTimer(withTimeInterval: 60, repeats: true) {_ in 
+        Timer.scheduledTimer(withTimeInterval: 0, repeats: true) {_ in 
                 updateCountdown()
             }
     }
